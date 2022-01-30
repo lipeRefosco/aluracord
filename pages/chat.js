@@ -175,6 +175,7 @@ function Message(props){
     const fromMessage = props.message;
     const fromAvatar = `https://github.com/${from}.png`
 
+
     const transportInScope = props.offScope
     console.log('Message Coponent', transportInScope)
 
@@ -194,6 +195,7 @@ function Message(props){
                             display: 'inline'
                         }}
                         onClick={() => {
+                            // 
                             transportInScope(from)
                         }}
                     />
