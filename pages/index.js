@@ -55,7 +55,7 @@ function HomePage() {
             as="form"
             onSubmit={ eventInfo => {
               eventInfo.preventDefault();
-              router.push("/chat");
+              router.push(`/chat?user=${username}`);
             }}
             styleSheet={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

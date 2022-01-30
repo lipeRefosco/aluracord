@@ -1,8 +1,9 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
 import React from "react";
+import { useRouter } from "next/router"
+import { createClient } from "@supabase/supabase-js";
 import appConfig from "../config.json";
-import {createClient} from "@supabase/supabase-js";
-import bd from "../bd.json"
+import bd from "../bd.json";
 
 const URL_BANCO = bd.URL_BANCO;
 const URL_KEY_BANCO = bd.URL_KEY_BANCO;
@@ -10,7 +11,8 @@ const URL_KEY_BANCO = bd.URL_KEY_BANCO;
 const supabaseCliente = createClient(URL_BANCO, URL_KEY_BANCO);
 
 export default function ChatPage(){
-
+    const router = useRouter();
+    const userLoged = router.query.user;
     const [logedUserWrite, setLogedUserWrite] = React.useState('');
     const [chat, setChat] = React.useState([]);
     const [userFocusModal, setUserFocusModal] = React.useState('');
@@ -114,7 +116,10 @@ export default function ChatPage(){
     function sendMessage(){
         supabaseCliente.from("mensagens")
                        .insert([
-                           {from: "lipeRefosco", message: logedUserWrite}
+                           {
+                                from: userLoged,
+                                message: logedUserWrite
+                            }
                        ])
                        .then(() => {
                             console.log('Mensagem cadastrada!');
