@@ -1,10 +1,11 @@
 import { Box, Text, TextField, Image, Button } from "@skynexui/components";
 import React from "react";
-import appConfig from "../config.json"
-import {createClient} from "@supabase/supabase-js"
+import appConfig from "../config.json";
+import {createClient} from "@supabase/supabase-js";
+import bd from "../bd.json"
 
-const URL_BANCO = "https://ewizjfkkpmecgevxkmto.supabase.co";
-const URL_KEY_BANCO = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzM5OTY1OSwiZXhwIjoxOTU4OTc1NjU5fQ.ADsl5qkgSd7A4eQ2PHGx6ZotWuQlN5kDPvIzhq-f4Z8";
+const URL_BANCO = bd.URL_BANCO;
+const URL_KEY_BANCO = bd.URL_KEY_BANCO;
 
 const supabaseCliente = createClient(URL_BANCO, URL_KEY_BANCO);
 
@@ -12,7 +13,9 @@ export default function ChatPage(){
 
     const [logedUserWrite, setLogedUserWrite] = React.useState('');
     const [chat, setChat] = React.useState([]);
-
+    const [userFocusModal, setUserFocusModal] = React.useState('');
+    // const transport = setUserFocusModal;
+    console.log(userFocusModal);
 
     refreshChat();
 
@@ -33,7 +36,7 @@ export default function ChatPage(){
 
                 <Box styleSheet={{
                     maxWidth: '90%',
-                    maxHeight: '95vh',
+                    height: '95vh',
                     display: 'flex',
                     flexDirection: 'column',
                     flex: '1', 
@@ -47,13 +50,20 @@ export default function ChatPage(){
                     <Header/> {/* Header da página com o botão de logout */}
 
                     <Box styleSheet={{
+                        height: '95%',
+                        minHeight: '775px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
                         backgroundColor: 'rgba(0,0,0,0.4)',
                         padding: '1em',
                         borderRadius: '5px',
+                        // outline: `1px solid red`,
+                        position: 'relative',
                         outline: `1px solid ${appConfig.theme.colors.neutrals[999]}`,
                     }}> {/* Container messages */}
-                        
-                        <AllMessages messages={chat} />
+
+                        <AllMessages offScope={setUserFocusModal} messages={chat} />
 
                         <TextField value={logedUserWrite}
                             type="textarea"
@@ -73,18 +83,7 @@ export default function ChatPage(){
                                 if(key === 'Enter'){
                                     props.preventDefault();
 
-                                    // Cadastra na lista de mensagem
-                                    // setChat([
-                                    //     {
-                                    //         from: 'lipeRefosco',
-                                    //         message: logedUserWrite
-                                    //     },
-                                    //     ...chat
-                                    // ]);
-
                                     sendMessage();
-
-                                    // refreshChat();
 
                                     // Limpa o campo de texto
                                     setLogedUserWrite('');
@@ -109,7 +108,7 @@ export default function ChatPage(){
                 console.log(data)
                 setChat(data)
             });
-        }, [logedUserWrite]);
+        }, []);
     }
 
     function sendMessage(){
@@ -145,11 +144,23 @@ function Header(){
 function AllMessages(props){
     return(
         <>
-            <Box tag="ul" styleSheet={{ display: 'flex', flexDirection: 'column-reverse', gap: '0.8em'}}>
+            <Box tag="ul" styleSheet={{
+                display: 'flex',
+                flex: '1',
+                flexDirection: 'column-reverse',
+                gap: '0.8em',
+                overflow: 'scroll',
+            }}>
                 {props.messages.map( (message) => {
-                    return <Message styleSheet={{
-                        width: '100%'
-                    }} key={message.id} date={message.created_at} from={message.from} message={message.message} />
+                    return <Message
+                        offScope={props.offScope}
+                        styleSheet={{
+                            width: '100%'
+                        }}  
+                        key={message.id}
+                        date={message.created_at}
+                        from={message.from}
+                        message={message.message} />
                 })}
             </Box>
         </>
@@ -158,10 +169,14 @@ function AllMessages(props){
 
 function Message(props){
     const from = props.from;
-    const fromDate = props.date;
-    const fromDateFormated = fromDate.slice(0,10);
+    const fromFullDate = props.date.replace("T"," ").replace(/[A-z]/,"").slice(0,16);
+    const fromDate = fromFullDate.slice(0,10);
+    const fromTime = fromFullDate.slice(11)
     const fromMessage = props.message;
     const fromAvatar = `https://github.com/${from}.png`
+
+    const transportInScope = props.offScope
+    console.log('Message Coponent', transportInScope)
 
     return (
         <>
@@ -176,9 +191,19 @@ function Message(props){
                             height: '20px',
                             borderRadius: '50%',
                             marginRight: '5px',
-                            display: 'inline'}}
+                            display: 'inline'
+                        }}
+                        onClick={() => {
+                            transportInScope(from)
+                        }}
                     />
                         {from}:
+                </Text>
+                
+                <Text styleSheet={{
+                    display: 'flex',
+                    alignItems: 'center'
+                }}>
                     <Text styleSheet={{
                         fontSize: '0.7em',
                         color: appConfig.theme.colors.neutrals[100],
@@ -186,14 +211,11 @@ function Message(props){
                         padding: '3px',
                         margin: '3px',
                         borderRadius: '5px'
-                    }}>{fromDateFormated}</Text>
-                </Text>
-                
-                <Text styleSheet={{
-                    display: 'flex',
-                    alignItems: 'center'
-                }}>
-                    {fromMessage}
+                    }}>{fromDate} {fromTime}</Text>
+                    <Text
+                        styleSheet={{
+                            marginLeft: '6px'
+                        }}>{fromMessage}</Text>
                 </Text>
             </li>
         </>
