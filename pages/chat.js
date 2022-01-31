@@ -15,11 +15,19 @@ export default function ChatPage(){
     const userLoged = router.query.user;
     const [logedUserWrite, setLogedUserWrite] = React.useState('');
     const [chat, setChat] = React.useState([]);
-    const [userFocusModal, setUserFocusModal] = React.useState('');
-    // const transport = setUserFocusModal;
-    console.log(userFocusModal);
+    let [chatIsLoaded, setChatIsLoaded] = React.useState(false)
+    // const [copyChat, setCopyChat] = React.useState(chat)
+    // const [isCopyChatChange, setIsCopyChatChange] = React.useState(false);
 
-    refreshChat();
+    // console.log(chat);
+
+
+    React.useEffect(() =>{
+        loadChat(setChat);
+        console.log(chat)
+        refreshChat(setChat, chat, setChatIsLoaded)
+        console.log(chat)
+    }, [] )
 
     return (
         <>
@@ -65,7 +73,7 @@ export default function ChatPage(){
                         outline: `1px solid ${appConfig.theme.colors.neutrals[999]}`,
                     }}> {/* Container messages */}
 
-                        <AllMessages offScope={setUserFocusModal} messages={chat} />
+                        <AllMessages messages={chat} />
 
                         <TextField value={logedUserWrite}
                             type="textarea"
@@ -100,19 +108,6 @@ export default function ChatPage(){
         </>
     )
 
-    function refreshChat(){
-        React.useEffect(() =>{
-            supabaseCliente
-            .from("mensagens")
-            .select("*")
-            .order("id", { ascending: false })
-            .then( ({data}) => {
-                console.log(data)
-                setChat(data)
-            });
-        }, []);
-    }
-
     function sendMessage(){
         supabaseCliente.from("mensagens")
                        .insert([
@@ -125,6 +120,35 @@ export default function ChatPage(){
                             console.log('Mensagem cadastrada!');
                        })
     }
+
+}
+
+function refreshChat(setters, lastStateChat, reloadedState){
+    supabaseCliente
+    .from('mensagens')
+    .on('INSERT', lastInsert => {
+        setters( () => {
+            return[
+                lastInsert.new,
+                ...lastStateChat
+            ]
+        });
+        reloadedState(true)
+    })
+    .subscribe()
+}
+
+
+function loadChat(setters){
+
+    // Get all messages
+    return supabaseCliente
+    .from("mensagens")
+    .select("*")
+    .order("id", { ascending: false })
+    .then( ({data}) => { 
+        setters(data)
+    });
 
 }
 
@@ -158,7 +182,6 @@ function AllMessages(props){
             }}>
                 {props.messages.map( (message) => {
                     return <Message
-                        offScope={props.offScope}
                         styleSheet={{
                             width: '100%'
                         }}  
@@ -180,9 +203,6 @@ function Message(props){
     const fromMessage = props.message;
     const fromAvatar = `https://github.com/${from}.png`
 
-
-    const transportInScope = props.offScope
-    console.log('Message Coponent', transportInScope)
 
     return (
         <>
