@@ -15,19 +15,25 @@ export default function ChatPage(){
     const userLoged = router.query.user;
     const [logedUserWrite, setLogedUserWrite] = React.useState('');
     const [chat, setChat] = React.useState([]);
-    let [chatIsLoaded, setChatIsLoaded] = React.useState(false)
-    // const [copyChat, setCopyChat] = React.useState(chat)
-    // const [isCopyChatChange, setIsCopyChatChange] = React.useState(false);
-
-    // console.log(chat);
+    const [copyChat, setCopyChat] = React.useState([]);
+    const [chatIsFirstLoaded, setChatIsFirstLoaded] = React.useState(false)
+    const [chatIsReloaded, setChatIsReloaded] = React.useState(false)
 
 
-    React.useEffect(() =>{
-        loadChat(setChat);
-        console.log(chat)
-        refreshChat(setChat, chat, setChatIsLoaded)
-        console.log(chat)
-    }, [] )
+
+    React.useEffect((valorAtualChat) =>{
+        loadChat(setChat, setChatIsFirstLoaded);
+        console.log(valorAtualChat);
+        // refreshChat(setChat, chat, setChatIsReloaded)
+        // console.log(chat)
+    }, [])
+    
+    // if(chatIsFirstLoaded){
+        React.useEffect(() => {
+            console.log(copyChat)
+            refreshChat(setChat, copyChat, setChatIsReloaded)
+        }, []);
+    // }
 
     return (
         <>
@@ -123,33 +129,32 @@ export default function ChatPage(){
 
 }
 
-function refreshChat(setters, lastStateChat, reloadedState){
+function refreshChat(setters, lastStateChat, setReloadState){
     supabaseCliente
     .from('mensagens')
     .on('INSERT', lastInsert => {
-        setters( () => {
-            return[
+        setters([
                 lastInsert.new,
                 ...lastStateChat
-            ]
-        });
-        reloadedState(true)
+            ]);
+        setReloadState(true)
     })
     .subscribe()
 }
 
 
-function loadChat(setters){
+function loadChat(setters, setLoadState){
 
     // Get all messages
-    return supabaseCliente
+    supabaseCliente
     .from("mensagens")
     .select("*")
     .order("id", { ascending: false })
     .then( ({data}) => { 
-        setters(data)
+        setters(data);
+        setLoadState(true);
     });
-
+    
 }
 
 function Header(){
