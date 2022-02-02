@@ -15,25 +15,27 @@ export default function ChatPage(){
     const userLoged = router.query.user;
     const [logedUserWrite, setLogedUserWrite] = React.useState('');
     const [chat, setChat] = React.useState([]);
-    const [copyChat, setCopyChat] = React.useState([]);
-    const [chatIsFirstLoaded, setChatIsFirstLoaded] = React.useState(false)
-    const [chatIsReloaded, setChatIsReloaded] = React.useState(false)
 
 
 
-    React.useEffect((valorAtualChat) =>{
-        loadChat(setChat, setChatIsFirstLoaded);
-        console.log(valorAtualChat);
-        // refreshChat(setChat, chat, setChatIsReloaded)
-        // console.log(chat)
+    React.useEffect(() =>{
+        
+        loadChat(setChat);
+
+        refreshChat( (newMessage) => {
+            console.log("Nova mensagem", newMessage);
+            console.log("Chat atual", chat);
+
+            setChat( (valorAtualChat) =>{
+                console.log('Valor atual da lista:', valorAtualChat);
+                return [
+                    newMessage,
+                    ...valorAtualChat
+                ]   
+            });
+        });
+
     }, [])
-    
-    // if(chatIsFirstLoaded){
-        React.useEffect(() => {
-            console.log(copyChat)
-            refreshChat(setChat, copyChat, setChatIsReloaded)
-        }, []);
-    // }
 
     return (
         <>
@@ -79,7 +81,16 @@ export default function ChatPage(){
                         outline: `1px solid ${appConfig.theme.colors.neutrals[999]}`,
                     }}> {/* Container messages */}
 
-                        <AllMessages messages={chat} />
+                        {/* {typeof chat !== 'undefined'
+                        
+                        ? ( */}
+                            <AllMessages messages={chat} />
+                        {/* )
+                        : (
+                            "teste"
+                        )
+                        } */}
+                        
 
                         <TextField value={logedUserWrite}
                             type="textarea"
@@ -129,21 +140,17 @@ export default function ChatPage(){
 
 }
 
-function refreshChat(setters, lastStateChat, setReloadState){
-    supabaseCliente
+function refreshChat( setters, lastStateChat){
+    return supabaseCliente
     .from('mensagens')
     .on('INSERT', lastInsert => {
-        setters([
-                lastInsert.new,
-                ...lastStateChat
-            ]);
-        setReloadState(true)
+        setters(lastInsert.new);
     })
     .subscribe()
 }
 
 
-function loadChat(setters, setLoadState){
+function loadChat( setters ){
 
     // Get all messages
     supabaseCliente
@@ -152,7 +159,6 @@ function loadChat(setters, setLoadState){
     .order("id", { ascending: false })
     .then( ({data}) => { 
         setters(data);
-        setLoadState(true);
     });
     
 }
@@ -176,6 +182,7 @@ function Header(){
 }
 
 function AllMessages(props){
+    console.log("All messages",props.messages)
     return(
         <>
             <Box tag="ul" styleSheet={{
