@@ -1,4 +1,4 @@
-import { Box, Text, TextField, Image, Button } from "@skynexui/components";
+import { Box, Text, TextField, Image, Button, Icon } from "@skynexui/components";
 import React from "react";
 import { useRouter } from "next/router"
 import { createClient } from "@supabase/supabase-js";
@@ -22,12 +22,12 @@ export default function ChatPage(){
         
         loadChat(setChat);
 
-        refreshChat( (newMessage) => {
-            console.log("Nova mensagem", newMessage);
-            console.log("Chat atual", chat);
+        const subscribe = refreshChat( (newMessage) => {
+            // console.log("Nova mensagem", newMessage);
+            // console.log("Chat atual", chat);
 
             setChat( (valorAtualChat) =>{
-                console.log('Valor atual da lista:', valorAtualChat);
+                // console.log('Valor atual da lista:', valorAtualChat);
                 return [
                     newMessage,
                     ...valorAtualChat
@@ -35,6 +35,9 @@ export default function ChatPage(){
             });
         });
 
+        return () =>{
+            subscribe.unsubscribe();
+        }
     }, [])
 
     return (
@@ -69,7 +72,6 @@ export default function ChatPage(){
 
                     <Box styleSheet={{
                         height: '95%',
-                        minHeight: '775px',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'stretch',
@@ -81,42 +83,15 @@ export default function ChatPage(){
                         outline: `1px solid ${appConfig.theme.colors.neutrals[999]}`,
                     }}> {/* Container messages */}
 
-                        {/* {typeof chat !== 'undefined'
+                        <AllMessages messages={chat} />
                         
-                        ? ( */}
-                            <AllMessages messages={chat} />
-                        {/* )
-                        : (
-                            "teste"
-                        )
-                        } */}
+                        <WritingArea
+                            user={userLoged}
+                            userInputs={logedUserWrite}
+                            setters={setLogedUserWrite}
+                        />
+
                         
-
-                        <TextField value={logedUserWrite}
-                            type="textarea"
-                            placeholder="Digite sua mensagem"
-                            styleSheet={{
-                                    marginTop: '10px',
-                                    backgroundColor: appConfig.theme.colors.neutrals[500],
-                                    borderColor: appConfig.theme.colors.neutrals[700],
-                                    color: 'white',
-                            }}
-                            onChange={props => {
-                                const dataInserted = props.target.value
-                                setLogedUserWrite(dataInserted);
-                            }}
-                            onKeyPress={props => {
-                                const key = props.key;
-                                if(key === 'Enter'){
-                                    props.preventDefault();
-
-                                    sendMessage();
-
-                                    // Limpa o campo de texto
-                                    setLogedUserWrite('');
-                                }
-                            }}
-                        ></TextField>
                     </Box> {/* End container messages */}
 
                 </Box>{/* End container all chat */}
@@ -124,20 +99,6 @@ export default function ChatPage(){
             </Box>
         </>
     )
-
-    function sendMessage(){
-        supabaseCliente.from("mensagens")
-                       .insert([
-                           {
-                                from: userLoged,
-                                message: logedUserWrite
-                            }
-                       ])
-                       .then(() => {
-                            console.log('Mensagem cadastrada!');
-                       })
-    }
-
 }
 
 function refreshChat( setters, lastStateChat){
@@ -163,6 +124,22 @@ function loadChat( setters ){
     
 }
 
+function sendMessage(user, userWrite, setter){
+    supabaseCliente.from("mensagens")
+        .insert([
+            {
+                from: user,
+                message: userWrite
+            }
+        ])
+        .then(() => {
+            // console.log('Mensagem cadastrada!');
+        })
+
+    // Limpa o campo de texto
+    setter('');
+}
+
 function Header(){
     return (
         <>
@@ -181,8 +158,61 @@ function Header(){
     )
 }
 
+function WritingArea(props){
+    // console.log(props.user)
+    const logedUser = props.user;
+    const logedUserWrite = props.userInputs;
+    const setlogedUserWrite = props.setters;
+    return (
+        <>
+            <Box
+                styleSheet={{
+                    display: 'flex',
+                    position: 'relative',
+                    alignItems: 'center'
+                }}
+            >
+                <TextField value={logedUserWrite}
+                    type="textarea"
+                    placeholder="Digite sua mensagem"
+                    styleSheet={{
+                            width: '100%',
+                            flex: 'auto',
+                            marginTop: '10px',
+                            backgroundColor: appConfig.theme.colors.neutrals[500],
+                            borderColor: appConfig.theme.colors.neutrals[700],
+                            color: 'white',
+                    }}
+                    onChange={props => {
+                        const dataInserted = props.target.value
+                        setlogedUserWrite(dataInserted);
+                    }}
+                    onKeyPress={props => {
+                        const key = props.key;
+                        if(key === 'Enter'){
+                            props.preventDefault();
+                            sendMessage(logedUser, logedUserWrite, setlogedUserWrite);
+                        }
+                    }}
+                ></TextField>
+                <Button
+                    styleSheet={{
+                        position: 'absolute',
+                        right: '8px'
+                    }}
+                    onClick={ props =>{
+                        props.preventDefault();
+                        console.log(props)
+                        sendMessage(logedUser, logedUserWrite, setlogedUserWrite);
+                    }}
+                    iconName="FaArrowCircleRight"
+                />
+            </Box>
+        </>
+    )
+}
+
 function AllMessages(props){
-    console.log("All messages",props.messages)
     return(
         <>
             <Box tag="ul" styleSheet={{
@@ -190,7 +220,7 @@ function AllMessages(props){
                 flex: '1',
                 flexDirection: 'column-reverse',
                 gap: '0.8em',
-                overflow: 'scroll',
+                overflow: 'auto',
             }}>
                 {props.messages.map( (message) => {
                     return <Message
